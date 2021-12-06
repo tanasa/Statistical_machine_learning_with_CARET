@@ -1,0 +1,212 @@
+---
+title: "ASSOCIATION RULES"
+author: "Bogdan Tanasa"
+date: ""
+output:
+  pdf_document: default
+  html_document: default
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<p>&nbsp;</p>
+
+#### **1. DATA EXPLORATION**
+
+<p>&nbsp;</p>
+
+#### **2. ASSOCIATION RULES**
+
+<p>&nbsp;</p>
+
+
+\newpage
+<p>&nbsp;</p>
+#### **1. DATA EXPLORATION**
+<p>&nbsp;</p>
+
+&nbsp;
+&nbsp;
+
+We are using the data that we had from **UCI** a while ago in the file "Association_DataSet.csv".
+
+```{r }
+options(warn=-1)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(reshape2))
+suppressPackageStartupMessages(library(arules))
+suppressPackageStartupMessages(library(arulesViz))
+
+######################################################
+######################################################
+
+FILE1="Association_DataSet.csv"
+
+######################################################
+######################################################
+
+file = read.delim("Association_DataSet.csv", sep = ",", header=TRUE, stringsAsFactors=F)
+
+######################################################
+######################################################
+
+str(file)
+class(file)
+summary(file) 
+
+######################################################
+######################################################
+
+file$Family = as.factor(file$Family)
+file$Hobbies  = as.factor(file$Hobbies)
+file$Social_Club = as.factor(file$Social_Club)
+file$Political  = as.factor(file$Political)
+file$Professional = as.factor(file$Professional)
+file$Religious  = as.factor(file$Religious)
+file$Support_Group = as.factor(file$Support_Group)
+
+summary(file) 
+
+######################################################
+######################################################
+# to exclude Elapsed_Time and Age
+# to transform 0 and 1 into YES or NO 
+
+a_file <- file[, -which(names(file) %in% c("Elapsed_Time", "Age"))]
+
+summary(a_file)
+
+##  Time_in_Community     Gender            Working          Family   Hobbies 
+##  Length:3483        Length:3483        Length:3483        0:2125   0:2438  
+##  Class :character   Class :character   Class :character   1:1358   1:1045  
+##  Mode  :character   Mode  :character   Mode  :character                    
+##  Social_Club Political Professional Religious Support_Group
+##  0:2828      0:3156    0:2353       0:2025    0:2930       
+##  1: 655      1: 327    1:1130       1:1458    1: 553     
+
+a_file$Family = ifelse(a_file$Family == "0", "Family_No", "Family_Yes")
+a_file$Hobbies = ifelse(a_file$Hobbies == "0", "Hobbies_No", "Hobbies_Yes") 
+a_file$Social_Club = ifelse(a_file$Social_Club == "0", "Social_Club_No", "Social_Club_Yes") 
+a_file$Political = ifelse(a_file$Political == "0", "Political_No", "Political_Yes") 
+a_file$Professional  = ifelse(a_file$Professional == "0", "Professional_No", "Professional_Yes") 
+a_file$Religious = ifelse(a_file$Religious == "0", "Religious_No", "Religious_Yes") 
+a_file$Support_Group = ifelse(a_file$Support_Group == "0", "Support_Group_No", "Support_Group_Yes") 
+
+summary(a_file)
+
+write.csv(a_file, file = "the_dataset.csv", row.names = FALSE)
+```
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **2. ASSOCIATION RULES**
+<p>&nbsp;</p>
+\newpage
+
+Here we are performing the association analysis and we display the data.
+
+```{r }
+#####################################################################################
+
+the_data <- read.transactions("the_dataset.csv", sep = ",", header=TRUE)
+
+##################################################################
+##################################################################
+
+summary(the_data)
+# inspect(the_data)
+inspect(the_data[1:5])
+
+##################################################################
+##################################################################
+
+itemFrequencyPlot(the_data, support = 0.1)
+
+itemFrequencyPlot(the_data, topN = 20)
+
+##################################################################
+##################################################################
+
+# to visualize the data :
+
+image(sample(the_data, 100))
+
+##################################################################
+##################################################################
+
+# if we attempt to use the default settings of support = 0.1 and confidence = 0.8, 
+# find a set of 2918 rules:
+
+the_rules = apriori(the_data)
+
+summary(the_rules)
+
+# if we change the settings we may find less rules:
+
+# the_rules = apriori(the_data, parameter = list(support = 0.1, 
+#                                               confidence = 0.8, 
+#                                               minlen = 2))
+
+# summary(the_rules)
+```
+
+\newpage
+<p>&nbsp;</p>
+**STRONGLY SUPPORTED ASSOCIATION RULES**
+&nbsp;
+\newpage
+
+```{r }
+################################################################## DISPLAYING strongly 
+################################################################## SUPPORTED RULES
+
+rules.sorted <- sort(the_rules, by="lift")
+
+# inspect(rules.sorted)
+
+inspect(rules.sorted[1:5])
+
+## saving the data :
+
+write(the_rules, file = "the_rules.csv", 
+                 sep = ",", 
+                 quote = TRUE, 
+                 row.names = FALSE)
+```
+
+\newpage
+<p>&nbsp;</p>
+
+```{r }
+## visualizing the data :
+
+plot(the_rules)
+
+plot(the_rules, method="graph", control=list(type="items"))
+
+# plot(the_rules, method="paracoord", control=list(reorder=TRUE))
+
+############################################################################
+############################################################################
+################################ a piece of R code if we may have to use
+################################ depending on the context
+
+# inspect(rules.sorted)
+
+# prune redundant rules.
+# subset.matrix <- is.subset(rules.sorted, rules.sorted)
+# subset.matrix[lower.tri(subset.matrix, diag=T)] <- NA
+# redundant <- colSums(subset.matrix, na.rm=T) >= 1
+# which(redundant)
+
+# remove redundant rules.
+# rules.pruned <- rules.sorted[!redundant]
+# inspect(rules.pruned)
+```
+
+\newpage

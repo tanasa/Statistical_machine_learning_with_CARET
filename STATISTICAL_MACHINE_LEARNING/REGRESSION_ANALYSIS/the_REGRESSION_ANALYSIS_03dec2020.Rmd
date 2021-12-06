@@ -1,0 +1,1453 @@
+---
+title: "REGRESSION ANALYSIS"
+author: "Bogdan Tanasa"
+date: ""
+output:
+  pdf_document: default
+  html_document: default
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<p>&nbsp;</p>
+
+#### **0. DATA INFORMATION**
+
+<p>&nbsp;</p>
+
+#### **1. DATA EXPLORATION**
+
+<p>&nbsp;</p>
+
+#### **2. REGRESSION ANALYSIS : by each FEATURE**
+
+<p>&nbsp;</p>
+
+#### **3. REGRESSION ANALYSIS : the correlations of the features**
+
+<p>&nbsp;</p>
+
+#### **4. REGRESSION ANALYSIS : selecting the independent features**
+
+<p>&nbsp;</p>
+
+#### **5. REGRESSION ANALYSIS : the initial MULTI-LINEAR REGRESSION**
+
+<p>&nbsp;</p>
+
+#### **6. REGRESSION ANALYSIS : the subsequent MULTI-LINEAR REGRESSION**
+
+<p>&nbsp;</p>
+
+#### **7. REGRESSION ANALYSIS by CARET : the TRAINING and the TESTING datasets**
+
+<p>&nbsp;</p>
+
+#### **8. REGRESSION ANALYSIS by CARET to build a LM considering one predictor**
+
+<p>&nbsp;</p>
+
+#### **9. REGRESSION ANALYSIS by CARET to build a LM using multiple predictors**
+
+<p>&nbsp;</p>
+
+#### **10. REGRESSION ANALYSIS : using POLYNOMIAL REGRESSION**
+
+<p>&nbsp;</p>
+
+#### **11. REGRESSION ANALYSIS : using SPLINES**
+
+<p>&nbsp;</p>
+
+#### **12. REGRESSION ANALYSIS : using GLM**
+
+<p>&nbsp;</p>
+
+#### **13. REGRESSION ANALYSIS : MODEL SELECTION based on BIC**
+
+<p>&nbsp;</p>
+
+#### **14. REGRESSION ANALYSIS : MODEL SELECTION based on AIC**
+
+<p>&nbsp;</p>
+
+#### **15. REGRESSION ANALYSIS : using RIDGE REGRESSION**
+
+<p>&nbsp;</p>
+
+#### **16. REGRESSION ANALYSIS : using LASSO REGRESSION**
+
+<p>&nbsp;</p>
+
+\newpage
+<p>&nbsp;</p>
+#### **0. DATA INFORMATION**
+<p>&nbsp;</p>
+\newpage
+
+&nbsp;
+&nbsp;
+
+We are using the data that we had from **UCI** a while ago in the file : 
+https://archive.ics.uci.edu/ml/datasets/Concrete+Compressive+Strength.
+
+&nbsp;
+&nbsp;
+
+**The aim is to use the 8 features of the concrete in order to predict the concrete compressive strength.**
+
+&nbsp;
+&nbsp;
+
+According to the web page at UC Irvine, the concrete is the most important material in civil engineering. 
+The concrete compressive strength is a highly nonlinear function of age and ingredients. These ingredients 
+include cement, blast furnace slag, fly ash, water, superplasticizer, coarse aggregate, and fine aggregate.
+
+&nbsp;
+&nbsp;
+
+**Data Characteristics:**
+    
+&nbsp;
+
+The actual concrete compressive strength (MPa) for a given mixture under a specific age (days) was determined
+from laboratory. Data is in raw form (not scaled). 
+
+&nbsp;
+&nbsp;
+
+**Summary Statistics:** 
+
+&nbsp;
+
+Number of instances (observations): 1030
+Number of Attributes: 9
+Attribute breakdown: 8 quantitative input variables, and 1 quantitative output variable
+Missing Attribute Values: None
+
+&nbsp;
+&nbsp;
+
+**Variable Information:**
+
+Name -- Data Type -- Measurement -- Description
+
+Cement (component 1) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Blast Furnace Slag (component 2) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Fly Ash (component 3) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Water (component 4) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Superplasticizer (component 5) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Coarse Aggregate (component 6) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Fine Aggregate (component 7) -- quantitative -- kg in a m3 mixture -- Input Variable
+
+Age -- quantitative -- Day (1~365) -- Input Variable
+
+Concrete compressive strength -- quantitative -- MPa -- Output Variable 
+
+&nbsp;
+
+```{r }
+options(warn=-1)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(reshape2))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(purrr))
+suppressPackageStartupMessages(library(ggpubr))
+suppressPackageStartupMessages(library(broom))
+suppressPackageStartupMessages(library(tibble))
+suppressPackageStartupMessages(library(class))
+suppressPackageStartupMessages(library(gmodels))
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(e1071))
+suppressPackageStartupMessages(library(ISLR))
+suppressPackageStartupMessages(library(pROC))
+suppressPackageStartupMessages(library(lattice))
+suppressPackageStartupMessages(library(kknn))
+suppressPackageStartupMessages(library(multiROC))
+suppressPackageStartupMessages(library(MLeval))
+suppressPackageStartupMessages(library(AppliedPredictiveModeling))
+suppressPackageStartupMessages(library(corrplot))
+suppressPackageStartupMessages(library(Hmisc))
+suppressPackageStartupMessages(library(rattle))
+suppressPackageStartupMessages(library(Hmisc))
+suppressPackageStartupMessages(library(broom)) # to add : AUGMENT
+suppressPackageStartupMessages(library(rattle))
+suppressPackageStartupMessages(library(quantmod)) 
+suppressPackageStartupMessages(library(nnet))
+suppressPackageStartupMessages(library(NeuralNetTools))
+suppressPackageStartupMessages(library(neuralnet))
+suppressPackageStartupMessages(library(klaR))
+suppressPackageStartupMessages(library(kernlab))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(cluster))
+suppressPackageStartupMessages(library(factoextra))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(fpc))
+suppressPackageStartupMessages(library(gplots))
+suppressPackageStartupMessages(library(pheatmap))
+# suppressPackageStartupMessages(library(d3heatmap))
+suppressPackageStartupMessages(library(clValid))
+suppressPackageStartupMessages(library(clustertend))
+suppressPackageStartupMessages(library(factoextra))
+suppressPackageStartupMessages(library(ggfortify))
+suppressPackageStartupMessages(library(splines))
+suppressPackageStartupMessages(library(mgcv))
+suppressPackageStartupMessages(library(leaps))
+suppressPackageStartupMessages(library(MASS))
+suppressPackageStartupMessages(library(glmnet))
+suppressPackageStartupMessages(library(car))
+suppressPackageStartupMessages(library(MASS))
+
+# suppressPackageStartupMessages(library(ggstatsplot))
+######################################################
+######################################################
+FILE1="Concrete_Data.csv"
+######################################################
+######################################################
+file = read.delim(FILE1, sep = ",", header=TRUE, stringsAsFactors=F)
+######################################################
+######################################################
+str(file)
+class(file)
+
+# summary(file) 
+# all the FEATURES are NUMERICAL
+######################################################
+######################################################
+# we choose shorter NAMES for the FEATURES
+
+names(file)[1] <- "Cement"
+names(file)[2] <- "Blast.Furnace.Slag"
+names(file)[3] <- "Fly.Ash"
+names(file)[4] <- "Water"
+names(file)[5] <- "Superplasticizer"
+names(file)[6] <- "Coarse.Aggregate"
+names(file)[7] <- "Fine.Aggregate"
+names(file)[8] <- "Age"
+names(file)[9] <- "CCS" #### Concrete.compressive.strength.MPa..megapascals
+
+summary(file) 
+```
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **1. DATA EXPLORATION**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+# exploring each feature in the data 
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Cement, fill=Cement)) + theme_bw()
+
+ggplot(file, aes(x=Cement)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Blast.Furnace.Slag, fill=Blast.Furnace.Slag)) + theme_bw()
+
+ggplot(file, aes(x=Blast.Furnace.Slag)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Fly.Ash, fill=Fly.Ash)) + theme_bw()
+       
+ggplot(file, aes(x=Fly.Ash)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot       
+```
+
+```{r }
+
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Water, fill=Water)) + theme_bw()
+
+ggplot(file, aes(x=Water)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot   
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Superplasticizer, fill=Superplasticizer)) + theme_bw()
+
+ggplot(file, aes(x=Superplasticizer)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot   
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Coarse.Aggregate, fill=Coarse.Aggregate)) + theme_bw()
+
+ggplot(file, aes(x=Coarse.Aggregate)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot   
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Fine.Aggregate, fill=Fine.Aggregate)) + theme_bw()
+
+ggplot(file, aes(x=Fine.Aggregate)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot   
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=Age, fill=Age)) + theme_bw()
+
+ggplot(file, aes(x=Age)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot   
+```
+
+```{r }
+ggplot(data = file) + 
+       geom_bar(mapping = aes(x=CCS, fill=CCS)) + theme_bw()
+
+ggplot(file, aes(x=CCS)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=.5,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="#FF6666")  # Overlay with transparent density plot   
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **MORE DATA VISUALIZATION**
+<p>&nbsp;</p>
+\newpage
+
+```{r eval=FALSE}
+
+featurePlot(x = file[c("Cement", "Blast.Furnace.Slag", "Fly.Ash", "Water", 
+                       "Superplasticizer", "Coarse.Aggregate", "Fine.Aggregate", "Age")], 
+            y = file$CCS,
+            plot = "density", 
+            ## Pass in options to xyplot() to make it prettier
+            scales = list(x = list(relation="free"), 
+                          y = list(relation="free")), 
+            adjust = 1.5, 
+            pch = "|", 
+            layout = c(4, 2), 
+            auto.key = list(columns = 5))
+
+featurePlot(x = file[c(1,2,3,4,5,6,7,8)], 
+            y = file$CCS,
+            plot = "density", 
+            ## Pass in options to xyplot() to make it prettier
+            scales = list(x = list(relation="free"), 
+                          y = list(relation="free")), 
+            adjust = 1.5, 
+            pch = "|", 
+            layout = c(4, 2), 
+            auto.key = list(columns = 5))
+```
+
+```{r eval=FALSE}
+
+varlist <- c("Cement", "Blast.Furnace.Slag", "Fly.Ash", "Water", 
+             "Superplasticizer", "Coarse.Aggregate", "Fine.Aggregate", "Age")
+
+customPlot <- function(varName) {
+
+file %>% 
+group_by_("CCS") %>% 
+select_("CCS", varName) %>% 
+ggplot(aes_string("CCS", varName, fill="CCS")) + 
+       geom_boxplot() + 
+       # scale_fill_manual(values=c("#999999", "#E69F00")) + 
+       facet_wrap(~CCS)
+}
+
+lapply(varlist, customPlot)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2. REGRESSION ANALYSIS by each FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+\newpage
+<p>&nbsp;</p>
+#### **2.1 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r eval = FALSE}
+#####################################################################################
+reg_model <- lm(CCS~Cement, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Cement, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.2 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Blast.Furnace.Slag, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Blast.Furnace.Slag, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.3 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Fly.Ash, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+head(reg_model.diagnostics)
+tail(reg_model.diagnostics)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Fly.Ash, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.4 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Water, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Water, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.5 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Superplasticizer, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Superplasticizer, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.6 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Coarse.Aggregate, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Coarse.Aggregate, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.7 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Fine.Aggregate, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Fine.Aggregate, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **2.8 one FEATURE**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+#####################################################################################
+reg_model <- lm(CCS~Age, data = file)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Displaying:
+ggplot(reg_model.diagnostics, aes(Age, CCS)) +
+geom_point() +
+stat_smooth(method = lm, se = FALSE) 
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **3. REGRESSION ANALYSIS : the correlations of the features**
+<p>&nbsp;</p>
+\newpage
+
+```{r eval = FALSE}
+transparentTheme(trans = .4)
+
+correlation_r <- rcorr(as.matrix(file))
+
+corr_graph <- corrplot(correlation_r$r, 
+                      type = "upper", 
+                      order = "hclust", 
+                      p.mat = correlation_r$P, 
+                      sig.level = 0.05)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+corsig <- corrplot(correlation_r$r, 
+                   method = "color", 
+                   col = col(200),  
+                   type = "upper", 
+                   order = "hclust", 
+                   addCoef.col = "black",            # Add coefficient of correlation
+                   tl.col = "darkblue", tl.srt = 45, # Text label color and rotation
+                   # Combine with significance level
+                   p.mat = correlation_r$P, 
+                   sig.level = 0.05, 
+                   insig = "blank", 
+                   # hide correlation coefficient on the principal diagonal
+                   diag = FALSE,
+                   title = "Correlations between the Features",
+                   mar=c(0,0,1,0))
+```
+
+Considering the correlation coefficients, we may consider all the features in the LM excepting  
+"Superplasticizer" that is anti-correlated with "Water".
+
+\newpage
+<p>&nbsp;</p>
+#### **4. REGRESSION ANALYSIS : selecting the independent features**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+str(file)
+file2 = subset(file, select = -c(Superplasticizer))
+str(file2)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **5. REGRESSION ANALYSIS : the initial MULTI-LINEAR REGRESSION**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+reg_model <- lm(CCS ~ Cement + Blast.Furnace.Slag + Fly.Ash + Water + 
+                      Coarse.Aggregate + Fine.Aggregate + Age,
+                      data = file2)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **6. REGRESSION ANALYSIS : the subsequent MULTI-LINEAR REGRESSION**
+<p>&nbsp;</p>
+\newpage
+
+After examining the F-statistics and the associated p-values, we will keep only the PREDICTOR VARIABLES 
+that are significantly related to the outcome variables.
+
+In our data, the changes in "Coarse.Aggregate" and "Fine.Aggregate" are not associated with the outcome.
+
+```{r }
+reg_model <- lm(CCS ~ Cement + Blast.Furnace.Slag + Fly.Ash + Water + Age,
+                      data = file2)
+
+# Linear Regression Model Summary
+reg_model
+summary(reg_model)
+summary(reg_model)$coefficient
+
+# Making Diagnostic Plots:
+reg_model.diagnostics <- augment(reg_model)
+
+# Diagnostic Plots
+par(mfrow = c(2, 2))
+plot(reg_model)
+
+# Diagnostic Plots
+autoplot(reg_model)
+
+# Cook's Distance is used to evaluate the Influential Points that will alter the Regression Analysis 
+# or the coefficents values.
+# By default Cook's Distance more than 4/( n - p - 1) defines an influential value. 
+
+plot(reg_model, 4)
+# Residuals vs Leverage
+plot(reg_model, 5)
+
+# The confidence interval of the model coefficient can be extracted as it follows:
+confint(reg_model)
+```
+&nbsp;
+
+Considering **the QQ plots**, we can see that the data is normally distributed (i.e. we do not have 
+to apply additional transformations), and we can write the formula:
+
+```{r eval=FALSE}
+CCS = 34.82 + 0.11 * Cement + 0.09 * Blast.Furnace.Slag + 0.07 * Fly.Ash - 0.25 * Water + 0.11 *Age
+```
+&nbsp;
+
+We have obtained *Adjusted R-squared : 0.6091* i.e "60% of the variance in the measure of CCS can be
+predicted by *Cement*, *Blast.Furnace.Slag*, *Fly.Ash*, *Water*, and *Age*". 
+
+&nbsp;
+
+In contrast, a simple linear model only on *Cement*, *Blast.Furnace.Slag*, *Fly.Ash*, *Water*, and *Age*", 
+provides the following numerical values of *Adjusted R-squared* (as we have noted above, on the previous 
+pages): 
+
+"Cement" : Adjusted R-squared: 0.2471
+
+"Blast.Furnace.Slag" : Adjusted R-squared: 0.01722
+
+"Fly.Ash" : Adjusted R-squared: 0.01022
+
+"Water" : Adjusted R-squared: 0.083
+
+"Superplasticizer" : Adjusted R-squared: 0.1332
+
+"Coarse.Aggregate" : Adjusted R-squared: 0.02626
+
+"Fine.Aggregate" : Adjusted R-squared: 0.02702
+
+"Age" : Adjusted R-squared: 0.1073
+
+&nbsp;
+
+We can also compute **the Residual Standard Error (RSE)**:
+
+```{r }
+sigma(reg_model)/mean(file2$CCS)
+```
+
+The RSE estimate gives a measure of error of prediction. 
+
+The lower the RSE, the more accurate the model.
+
+\newpage
+<p>&nbsp;</p>
+#### **7. REGRESSION ANALYSIS by CARET : the TRAINING and the TESTING datasets**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+set.seed(123)
+head(file2)
+tail(file2)
+```
+
+```{r }
+trainIndex <- createDataPartition(file2$CCS, p = 0.8, list=FALSE, times=1)
+subTrain <- file2[trainIndex,]
+subTest <- file2[-trainIndex,]
+```
+
+```{r }
+# setup cross validation and control parameters
+control <- trainControl(method="repeatedcv", number=3, repeats = 3, verbose = TRUE, search = "grid")
+metric <- "RMSE"
+tuneLength <- 10
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **8. REGRESSION ANALYSIS by CARET to build a LM considering one predictor**
+<p>&nbsp;</p>
+\newpage
+
+&nbsp;
+We have chosen here the predictor "Cement" as it provided an "Adjusted R-squared: 0.2471".
+&nbsp;
+
+```{r }
+# Training process 
+# Fit / train a Linear Regression model to the data
+
+fit.LR <- caret::train(CCS ~ Cement, 
+                       data=file2, 
+                       method="lm", 
+                       metric=metric, 
+                       preProc=c("center", "scale"), 
+                       trControl=control, 
+                       tuneLength = tuneLength)
+
+summary(fit.LR)
+```
+
+&nbsp;
+We have obtained similar results as before: "Adjusted R-squared:  0.2471".
+&nbsp;
+
+```{r }
+predictions <- predict(fit.LR, newdata = subTest)
+
+rmse <- RMSE(predictions, subTest$CCS)
+
+rmse
+```
+
+&nbsp;
+
+```{r }
+# R2
+R2(predictions,  subTest$CCS)
+
+# Error Rate
+error.rate = rmse/mean(subTest$CCS)
+error.rate
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **9. REGRESSION ANALYSIS by CARET to build a LM using multiple predictors**
+<p>&nbsp;</p>
+\newpage
+
+&nbsp;
+We have chosen now multiple predictors "Cement", "Blast.Furnace.Slag", "Fly.Ash", "Water", "Age",
+as all these provided an "Adjusted R-squared: 0.6091".
+&nbsp;
+
+```{r }
+# Training process 
+# Fit / train a Linear Regression model to the data
+
+fit.LR <- caret::train(CCS ~ Cement + Blast.Furnace.Slag + Fly.Ash + Water + Age,
+                       data=file2, 
+                       method="lm", 
+                       metric=metric, 
+                       preProc=c("center", "scale"), 
+                       trControl=control, 
+                       tuneLength = tuneLength)
+
+summary(fit.LR)
+```
+
+&nbsp;
+We have obtained similar results as before: "Adjusted R-squared: 0.6091".
+&nbsp;
+
+```{r }
+predictions <- predict(fit.LR, newdata = subTest)
+
+rmse <- RMSE(predictions, subTest$CCS)
+rmse
+```
+
+&nbsp;
+
+```{r }
+# R2
+r2 = R2(predictions,  subTest$CCS)
+r2
+
+# Error Rate
+error.rate = rmse/mean(subTest$CCS)
+error.rate
+```
+
+&nbsp;
+&nbsp;
+
+Indeed, as we have noted before, the **ERROR RATE of MULTIPLE LINEAR REGRESSION** is lower 
+than for **SIMPLE LINEAR REGRESSION**.
+
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+We can vary the potential successful models by introducing combinations of **INTERACTION TERMS**. 
+&nbsp;
+&nbsp;
+
+```{r }
+# library(car)
+# to compute VIF
+# model <- lm(CCS ~., data = subTrain)
+# car:: vif(fit.LR)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **10. REGRESSION ANALYSIS : using POLYNOMIAL REGRESSION**
+<p>&nbsp;</p>
+\newpage
+
+&nbsp;
+&nbsp;
+Here we are using another mathematical model based on **POLYNOMIAL REGRESSION**, having a degree 2 polynomial on "Cement". 
+We have chosen this model for illustrative purposes.
+&nbsp;
+&nbsp;
+
+```{r }
+set.seed(200)
+poly_reg <- lm(CCS ~ poly(Cement, 2), data = subTrain)
+
+poly_reg
+summary(poly_reg)
+```
+
+```{r }
+predictions <- poly_reg %>% predict(subTest)
+
+rmse <- RMSE(predictions, subTest$CCS)
+rmse
+```
+
+```{r }
+# R2
+r2 = R2(predictions,  subTest$CCS)
+r2
+
+# Error Rate
+error.rate = rmse/mean(subTest$CCS)
+error.rate
+```
+
+&nbsp;
+&nbsp;
+
+Shall we compare the **RMSE**, **R2** and **ERROR RATE** in the models that we have buit, we could note that 
+**"one linear predictor"** on "Cement" has the same performance as **"the polynomial predictor"** on "Cement", 
+while **"the multiple linear predictor"** performs better.
+
+&nbsp;
+&nbsp;
+
+**one linear predictor (on "Cement"):**
+
+&nbsp;
+&nbsp;
+
+RMSE : 14
+
+R2 : 0.24
+
+error.rate : 0.39
+
+&nbsp;
+&nbsp;
+
+**multiple linear predictor (on "Cement", "Blast.Furnace.Slag","Fly.Ash", "Water", "Age"):**
+
+&nbsp;
+&nbsp;
+
+RMSE : 10.26
+
+R2 : 0.61
+
+error.rate 0.28
+
+&nbsp;
+&nbsp;
+
+**polynomial predictor (on "Cement"):**
+
+&nbsp;
+&nbsp;
+
+RMSE : 14.3
+
+R2 : 0.24
+
+error.rate : 0.39
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **11. REGRESSION ANALYSIS : using SPLINES**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+set.seed(200)
+library(splines) 
+
+knots <- quantile(subTrain$CCS, p = c( 0.25, 0.5, 0.75))
+knots
+
+splinemodel <- lm(CCS ~ bs(Cement, knots = knots), data = subTrain)
+
+splinemodel
+summary(splinemodel)
+```
+
+```{r }
+# Make predictions
+predictions <- splinemodel %>% predict(subTest)
+
+# Model performance 
+rmse = RMSE(predictions, subTest$CCS)
+rmse
+```
+
+```{r }
+# R2           
+r2 = R2(predictions, subTest$CCS) 
+r2
+
+# Error Rate
+error.rate = rmse/mean(subTest$CCS)
+error.rate
+```
+
+&nbsp;
+&nbsp;
+
+As we can note above, **the REGRESSION MODEL using the SPLINES on one variable** ("Cement") performs 
+as well as **a SIMPLE LINEAR REGRESION MODEL on the same variable ("Cement")**, 
+and as well as **a POLYNOMIAL MODEL on the same variable ("Cement")**. More precisely:
+
+&nbsp;
+&nbsp;
+
+RMSE : 14.31
+
+R2 : 0.244
+
+error.rate : 0.39
+
+&nbsp;
+&nbsp;
+
+```{r }
+ggplot(subTrain, aes(Cement, CCS)) + 
+                 geom_point() + 
+                 stat_smooth(method = lm, formula = y ~ splines:: bs(x, df = 3))
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **12. REGRESSION ANALYSIS : using GAM**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+set.seed(200)
+library(mgcv)
+ 
+gmmodel <- gam(CCS ~ s(Cement), data = subTrain) 
+
+gmmodel
+summary(gmmodel)
+```
+
+```{r }
+gampredictions <- gmmodel %>% predict(subTest) 
+ 
+# Model performance 
+rmse = RMSE(gampredictions, subTest$CCS)
+rmse
+```
+
+```{r }
+# R2           
+r2 = R2(gampredictions, subTest$CCS) 
+r2
+
+# Error Rate
+error.rate = rmse/mean(subTest$CCS)
+error.rate
+```
+
+&nbsp;
+&nbsp;
+
+As we could note also for **the GAM-based approach**, the performance of the model on one feature "Cement" is the same 
+as **the SPLINE-based approach**, or as **the POLYNOMIAL-based approach**, namely:
+
+&nbsp;
+&nbsp;
+
+RMSE : 14.32
+
+R2 : 0.24
+
+error.rate : 0.39
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **13. REGRESSION ANALYSIS : MODEL SELECTION based on BIC**
+<p>&nbsp;</p>
+\newpage
+
+&nbsp;
+&nbsp;
+
+As we know from the class, for example, the lower the AIC, the better the model is. 
+
+Here, we compare the models by considering a metrics based on Adj.R2, CP and BIC. 
+
+We use the function **"regsubsets"** in the package "leaps" that gives the information :
+
+&nbsp;
+&nbsp;
+
+**rsq	: The r-squared for each model**
+
+**rss	: Residual sum of squares for each model**
+
+**adjr2	: Adjusted r-squared**
+
+**cp : Mallows' Cp**
+
+**bic	: Schwartz's information criterion, BIC**
+
+&nbsp;
+&nbsp;
+
+```{r }
+checkmodels <- regsubsets(CCS ~., data = file2, nvmax = 13)
+
+summary(checkmodels)
+str(checkmodels)
+
+res.sum <- summary(checkmodels) 
+
+data.frame(Adj.R2 = which.max(res.sum$adjr2), 
+           CP = which.min(res.sum$cp), 
+           BIC = which.min(res.sum$bic))
+```
+
+&nbsp;
+&nbsp;
+
+As we can note again, the model that works the best based on BIC and CP is **the model 5** 
+that includes all the features, except "Coarse.Aggregate" and "Fine.Aggregate", and that 
+is the model that we have chosen to work with in the section on *MULTI-LINEAR REGRESSION*.
+
+&nbsp;
+&nbsp;
+
+```{r eval=FALSE}
+##          Cement Blast.Furnace.Slag Fly.Ash Water Coarse.Aggregate
+## 5  ( 1 ) "*"    "*"                "*"     "*"   " "             
+## 6  ( 1 ) "*"    "*"                "*"     "*"   " "             
+## 7  ( 1 ) "*"    "*"                "*"     "*"   "*"             
+##          Fine.Aggregate Age
+## 5  ( 1 ) " "            "*"
+## 6  ( 1 ) "*"            "*"
+## 7  ( 1 ) "*"            "*"
+```
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **14. REGRESSION ANALYSIS : MODEL SELECTION based on AIC**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+# the best AIC model:
+
+full.model <- lm(CCS ~., data = file2) 
+
+step.model <- stepAIC(full.model, direction = "both", trace = FALSE) 
+
+summary(step.model)
+```
+
+&nbsp;
+&nbsp;
+
+It is indeed an additional confirmation that we shall include in the model the following attributes (features) :
+"Cement", "Blast.Furnace.Slag", "Fly.Ash", "Water", "Age" (as we have already done above in the previous sections).
+
+&nbsp;
+&nbsp;
+
+And, the adjusted R-squared:  0.6091. 
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **15. REGRESSION ANALYSIS : using RIDGE REGRESSION**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+# in this section, we are resuming the MULTI LINEAR MODEL
+# fit.LR
+# summary(fit.LR)
+# head(subTrain)
+# tail(subTrain)
+
+# x <- model.matrix(CCS ~., subTrain)[,-8] 
+x <- model.matrix(CCS ~., subTrain) 
+y <- subTrain$CCS
+
+# Alpha 0 for Ridge , 
+# Alpha 1 for Lasso .
+
+cv <- cv.glmnet(x, y, alpha = 0) 
+# Display the best lambda value which signifies the best shrinkage
+cv$lambda.min ##  Fit the final model on the training data 
+
+model <- glmnet(x, y, alpha = 0, lambda = cv$lambda.min) # Display regression coefficients coef (model)
+
+coef(model)
+
+# Predictions on the test data
+
+x.test <- model.matrix(CCS ~., subTest)
+
+predictions <- model %>% predict(x.test) %>% as.vector()
+
+# Model performance metrics 
+
+data.frame( rmse = RMSE(predictions, subTest$CCS), 
+            Rsquare = R2(predictions, subTest$CCS))
+```
+
+&nbsp;
+&nbsp;
+
+The results are similar to the typical multi-linear regression model that we have applied above that has showed :
+
+RMSE : 10.26
+
+R2 : 0.61
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+#### **16. REGRESSION ANALYSIS : using LASSO REGRESSION**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+# in this section, we are resuming the MULTI LINEAR MODEL
+# fit.LR
+# summary(fit.LR)
+# head(subTrain)
+# tail(subTrain)
+
+# x <- model.matrix(CCS ~., subTrain)[,-8] 
+x <- model.matrix(CCS ~., subTrain) 
+y <- subTrain$CCS
+
+# Alpha 0 for Ridge , 
+# Alpha 1 for Lasso .
+
+cv <- cv.glmnet(x, y, alpha = 1) 
+# Display the best lambda value which signifies the best shrinkage
+cv$lambda.min ##  Fit the final model on the training data 
+
+model <- glmnet(x, y, alpha = 1, lambda = cv$lambda.min) # Display regression coefficients coef (model)
+
+coef(model)
+
+# Predictions on the test data
+
+x.test <- model.matrix(CCS ~., subTest)
+
+predictions <- model %>% predict(x.test) %>% as.vector()
+
+# Model performance metrics 
+
+data.frame( rmse = RMSE(predictions, subTest$CCS), 
+            Rsquare = R2(predictions, subTest$CCS))
+```
+
+&nbsp;
+&nbsp;
+
+The results are similar to the typical multi-linear regression model that we have applied above that has showed :
+
+RMSE : 10.26
+
+R2 : 0.61
+
+&nbsp;
+&nbsp;
+
+\newpage
+<p>&nbsp;</p>
+\newpage

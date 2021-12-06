@@ -1,0 +1,1195 @@
+---
+title: "ANN and SVM to predict STUDENT GRADE (no pass/pass)"
+author: "Bogdan Tanasa"
+date: ""
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### **1. INTRODUCTION**
+
+<p>&nbsp;</p>
+
+#### **2. DATA EXPLORATION**
+
+<p>&nbsp;</p>
+
+#### **3. DATA SELECTION**
+
+<p>&nbsp;</p>
+
+#### **4. DATA FILTERING**
+
+<p>&nbsp;</p>
+
+#### **5. TRAINING AND TEST SETS**
+
+<p>&nbsp;</p>
+
+#### **6. TRAINING AND PREDICTIONS WITH ANN (CARET)**
+
+<p>&nbsp;</p>
+
+#### **7. TRAINING AND PREDICTIONS WITH ANN**
+
+<p>&nbsp;</p>
+
+#### **8. TRAINING AND PREDICTIONS WITH SVM (CARET)**
+
+<p>&nbsp;</p>
+
+#### **9. TRAINING AND PREDICTIONS WITH SVM**
+
+<p>&nbsp;</p>
+
+#### **10. CONCLUSIONS**
+
+<p>&nbsp;</p>
+
+\newpage
+<p>&nbsp;</p>
+#### **1. INTRODUCTION**
+<p>&nbsp;</p>
+
+We are using the data from **UCI** : !( https://archive.ics.uci.edu/ml/datasets/Student+Performance )
+
+We are reading a file about **STUDENTS**, and we aim to predict whether they have passed or not the exams **(PASS/no_PASS)**;
+
+The attributes in the **INPUT FILE** are the following : 
+
+* 1 school - student's school (binary: "GP" - Gabriel Pereira or "MS" - Mousinho da Silveira)
+
+* 2 sex - student's sex (binary: "F" - female or "M" - male)
+
+* 3 age - student's age (numeric: from 15 to 22)
+
+* 4 address - student's home address type (binary: "U" - urban or "R" - rural)
+
+* 5 famsize - family size (binary: "LE3" - less or equal to 3 or "GT3" - greater than 3)
+
+* 6 Pstatus - parent's cohabitation status (binary: "T" - living together or "A" - apart)
+
+* 7 Medu - mother's education (numeric: 0 - none,  1 - primary education (4th grade), 2 - 5th to 9th grade, 3 - secondary education or 4  - higher education)
+
+* 8 Fedu - father's education (numeric: 0 - none,  1 - primary education (4th grade), 2 - 5th to 9th grade, 3 - secondary education or 4 - higher education)
+
+* 9 Mjob - mother's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
+
+* 10 Fjob - father's job (nominal: "teacher", "health" care related, civil "services" (e.g. administrative or police), "at_home" or "other")
+
+* 11 reason - reason to choose this school (nominal: close to "home", school "reputation", "course" preference or "other")
+
+* 12 guardian - student's guardian (nominal: "mother", "father" or "other")
+
+* 13 traveltime - home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour)
+
+* 14 studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours)
+
+* 15 failures - number of past class failures (numeric: n if 1<=n<3, else 4)
+
+* 16 schoolsup - extra educational support (binary: yes or no)
+
+* 17 famsup - family educational support (binary: yes or no)
+
+* 18 paid - extra paid classes within the course subject (Math or Portuguese) (binary: yes or no)
+
+* 19 activities - extra-curricular activities (binary: yes or no)
+
+* 20 nursery - attended nursery school (binary: yes or no)
+
+* 21 higher - wants to take higher education (binary: yes or no)
+
+* 22 internet - Internet access at home (binary: yes or no)
+
+* 23 romantic - with a romantic relationship (binary: yes or no)
+
+* 24 famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent)
+
+* 25 freetime - free time after school (numeric: from 1 - very low to 5 - very high)
+
+* 26 goout - going out with friends (numeric: from 1 - very low to 5 - very high)
+
+* 27 Dalc - workday alcohol consumption (numeric: from 1 - very low to 5 - very high)
+
+* 28 Walc - weekend alcohol consumption (numeric: from 1 - very low to 5 - very high)
+
+* 29 health - current health status (numeric: from 1 - very bad to 5 - very good)
+
+* 30 absences - number of school absences (numeric: from 0 to 93)
+
+
+
+**NOTES** 
+
+
+
+**DATA EXPLORATION** and **DATA SELECTION** and **DATA FILTERING** have been presented also in
+the previous documents, and here, we have not fully included all the figures in those sections. 
+
+\newpage
+<p>&nbsp;</p>
+#### **2. DATA EXPLORATION**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+options(warn=-1)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(reshape2))
+suppressPackageStartupMessages(library(readxl))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(purrr))
+suppressPackageStartupMessages(library(ggpubr))
+suppressPackageStartupMessages(library(broom))
+suppressPackageStartupMessages(library(tibble))
+suppressPackageStartupMessages(library(class))
+suppressPackageStartupMessages(library(gmodels))
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(e1071))
+suppressPackageStartupMessages(library(ISLR))
+suppressPackageStartupMessages(library(pROC))
+suppressPackageStartupMessages(library(lattice))
+suppressPackageStartupMessages(library(kknn))
+suppressPackageStartupMessages(library(multiROC))
+suppressPackageStartupMessages(library(MLeval))
+suppressPackageStartupMessages(library(AppliedPredictiveModeling))
+suppressPackageStartupMessages(library(corrplot))
+suppressPackageStartupMessages(library(Hmisc))
+suppressPackageStartupMessages(library(rattle))
+suppressPackageStartupMessages(library(Hmisc))
+suppressPackageStartupMessages(library(broom)) # to add : AUGMENT
+suppressPackageStartupMessages(library(rattle))
+suppressPackageStartupMessages(library(quantmod)) 
+suppressPackageStartupMessages(library(nnet))
+suppressPackageStartupMessages(library(NeuralNetTools))
+suppressPackageStartupMessages(library(neuralnet))
+suppressPackageStartupMessages(library(klaR))
+suppressPackageStartupMessages(library(kernlab))
+
+######################################################
+######################################################
+
+FILE1="student.mat.txt"
+
+######################################################
+######################################################
+# FILE2="student.por.txt"
+# FILE3="student.mat.and.por.txt"
+######################################################
+######################################################
+
+######################################################
+######################################################
+
+student <- read.delim(FILE1, sep="\t", header=T, stringsAsFactors=F)
+
+######################################################
+######################################################
+
+summary(student)
+str(student)
+class(student)
+```
+
+Here we are starting to display the data for visual exploration.
+
+```{r }
+################################################################################################
+################################################################################################
+# 1 school - student's school (binary: "GP" - Gabriel Pereira or "MS" - Mousinho da Silveira)
+
+# unique(student$school)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=school, fill=school))
+
+# ggsave("display.1.school.png")
+# student$school = as.factor(student$school)
+student$school = as.character(student$school)
+
+################################################################################################
+################################################################################################
+# 2 sex - student's sex (binary: "F" - female or "M" - male)
+
+# unique(student$sex)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=sex , fill=sex))
+
+# ggsave("display.2.sex.png")
+student$sex = as.factor(student$sex)
+
+################################################################################################
+################################################################################################
+# 3 age - student's age (numeric: from 15 to 22)
+
+# unique(student$age)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=age , fill=age))
+
+# ggplot(data=student, aes(x=age)) + 
+#       geom_histogram(aes(y=..density..), colour="black", fill="white")+
+#       geom_density(alpha=.2, fill="#FF6666")
+
+# ggsave("display.3.age.png")
+# AGE is already on the numerical scale !!  
+student$age = as.integer(student$age)
+
+################################################################################################
+################################################################################################
+# 4 address - student's home address type (binary: "U" - urban or "R" - rural)
+
+# unique(student$address) ## [1] "U" "R"
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=address, fill=address))
+
+# ggsave("display.4.address.png")
+student$address = as.factor(student$address)
+
+################################################################################################
+################################################################################################
+# 5 famsize - family size (binary: "LE3" - less or equal to 3 or "GT3" - greater than 3)
+
+# unique(student$famsize)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=famsize, fill=famsize))
+
+# ggsave("display.5.famsize.png")
+student$famsize = as.factor(student$famsize)
+
+################################################################################################
+################################################################################################
+# 6 Pstatus - parent's cohabitation status (binary: "T" - living together or "A" - apart)
+
+# unique(student$Pstatus)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Pstatus, fill=Pstatus))
+
+# ggsave("display.6.Pstatus.png")
+student$Pstatus = as.factor(student$Pstatus)
+
+################################################################################################
+################################################################################################
+# 7 Medu - mother's education (numeric: 0 - none,  1 - primary education (4th grade), 
+# 2 - 5th to 9th grade, 3 - secondary education or 4 - higher education)
+
+# unique(student$Medu)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Medu, fill=Medu))
+
+# ggsave("display.7.Medu.png")
+# we may wanna use the numerical values in various regression models
+student$Medu = as.integer(student$Medu)
+
+################################################################################################
+################################################################################################
+# 8 Fedu - father's education (numeric: 0 - none,  1 - primary education (4th grade), 
+# 2 - 5th to 9th grade, 3 - secondary education or 4 - higher education)
+
+# unique(student$Fedu)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Fedu, fill=Fedu))
+
+# ggsave("display.8.Fedu.png")
+# we may wanna use the numerical values in various regression models
+student$Fedu = as.integer(student$Fedu)
+
+################################################################################################
+################################################################################################
+# 9 Mjob - mother's job (nominal: "teacher", "health" care related, civil "services" 
+# (e.g. administrative or police), "at_home" or "other")
+
+# unique(student$Mjob)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Mjob, fill=Mjob))
+
+# ggsave("display.9.Mjob.png")
+student$Mjob = as.factor(student$Mjob)
+
+################################################################################################
+################################################################################################
+# 10 Fjob - father's job (nominal: "teacher", "health" care related, civil "services" 
+# (e.g. administrative or police), "at_home" or "other")
+
+# unique(student$Fjob)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Fjob, fill=Fjob))
+
+# ggsave("display.10.Fjob.png")
+student$Fjob = as.factor(student$Fjob)
+
+################################################################################################
+################################################################################################
+# 11 reason - reason to choose this school 
+# (nominal: close to "home", school "reputation", "course" preference or "other")
+
+# unique(student$reason)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=reason, fill=reason))
+
+# ggsave("display.11.reason.png")
+student$reason = as.factor(student$reason)
+
+################################################################################################
+################################################################################################
+# 12 guardian - student's guardian (nominal: "mother", "father" or "other")
+
+# unique(student$guardian)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=guardian, fill=guardian))
+
+# ggsave("display.12.guardian.png")
+student$guardian = as.factor(student$guardian)
+
+################################################################################################
+################################################################################################
+# 13 traveltime - home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 
+# 3 - 30 min. to 1 hour, or 4 - >1 hour)
+
+# unique(student$traveltime)
+
+# ggplot(data = student) + 
+#       geom_bar(mapping = aes(x=traveltime, fill=traveltime))
+
+# ggsave("display.13.traveltime.png")
+# we may wanna use the NUMERICAL VALUES :
+student$traveltime = as.integer(student$traveltime)
+
+################################################################################################
+################################################################################################
+# 14 studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 
+# 3 - 5 to 10 hours, or 4 - >10 hours)
+
+# unique(student$studytime)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=studytime, fill=studytime))
+
+# ggsave("display.14.studytime.png")
+# we may wanna use the NUMERICAL VALUES :
+student$studytime = as.integer(student$studytime)
+
+################################################################################################
+################################################################################################
+# 15 failures - number of past class failures (numeric: n if 1<=n<3, else 4)
+
+# unique(student$failures)
+
+# ggplot(data = student) + 
+#       geom_bar(mapping = aes(x=failures, fill=failures))
+
+# ggsave("display.15.failures.png")
+# we may wanna use the NUMERICAL VALUES :
+student$failures = as.integer(student$failures)
+
+################################################################################################
+################################################################################################
+# 16 schoolsup - extra educational support (binary: yes or no)
+
+# unique(student$schoolsup)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=schoolsup, fill=schoolsup))
+
+# ggsave("display.16.schoolsup.png")
+student$schoolsup = as.factor(student$schoolsup)
+
+################################################################################################
+################################################################################################
+# 17 famsup - family educational support (binary: yes or no)
+
+# unique(student$famsup)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=famsup, fill=famsup))
+
+# ggsave("display.17.famsup.png")
+student$famsup = as.factor(student$famsup)
+
+################################################################################################
+################################################################################################
+# 18 paid - extra paid classes within the course subject (Math or Portuguese) 
+# (binary: yes or no)
+
+# unique(student$paid)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=paid, fill=paid))
+
+# ggsave("display.18.paid.png")
+student$paid = as.factor(student$paid)
+
+################################################################################################
+################################################################################################
+# 19 activities - extra-curricular activities (binary: yes or no)
+
+# unique(student$activities)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=activities, fill=activities))
+
+# ggsave("display.19.activities.png")
+student$activities = as.factor(student$activities)
+
+################################################################################################
+################################################################################################
+# 20 nursery - attended nursery school (binary: yes or no)
+
+# unique(student$nursery)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=nursery, fill=nursery))
+
+# ggsave("display.20.nursery.png")
+student$nursery = as.factor(student$nursery)
+
+################################################################################################
+################################################################################################
+# 21 higher - wants to take higher education (binary: yes or no)
+
+# unique(student$higher)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=higher, fill=higher))
+
+# ggsave("display.21.higher.png")
+student$higher = as.factor(student$higher)
+
+################################################################################################
+################################################################################################
+# 22 internet - Internet access at home (binary: yes or no)
+
+# unique(student$internet)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=internet, fill=internet))
+
+# ggsave("display.22.internet.png")
+student$internet = as.factor(student$internet)
+
+################################################################################################
+################################################################################################
+# 23 romantic - with a romantic relationship (binary: yes or no)
+
+# unique(student$romantic)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=romantic, fill=romantic))
+
+# ggsave("display.23.romantic.png")
+student$romantic = as.factor(student$romantic)
+
+################################################################################################
+################################################################################################
+# 24 famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent)
+
+# unique(student$famrel)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=famrel, fill=famrel))
+
+# ggsave("display.24.famrel.png")
+# i believe that we can keep these as numerical :
+student$famrel = as.integer(student$famrel)
+
+################################################################################################
+################################################################################################
+# 25 freetime - free time after school (numeric: from 1 - very low to 5 - very high)
+
+# unique(student$freetime)
+
+# ggplot(data = student) + 
+#       geom_bar(mapping = aes(x=freetime, fill=freetime))
+
+# ggsave("display.25.freetime.png")
+# i believe that we can keep these as numerical :
+student$freetime = as.integer(student$freetime)
+
+################################################################################################
+################################################################################################
+# 26 goout - going out with friends (numeric: from 1 - very low to 5 - very high)
+
+# unique(student$goout)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=goout, fill=goout))
+
+# ggsave("display.26.goout.png")
+# i believe that we can keep these as numerical :
+student$goout = as.integer(student$goout)
+
+################################################################################################
+################################################################################################
+# 27 Dalc - workday alcohol consumption (numeric: from 1 - very low to 5 - very high)
+
+# unique(student$Dalc)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Dalc, fill=Dalc))
+
+# ggsave("display.27.Dalc.png")
+# i believe that we can keep these as numerical :
+student$Dalc = as.integer(student$Dalc)
+
+################################################################################################
+################################################################################################
+# 28 Walc - weekend alcohol consumption (numeric: from 1 - very low to 5 - very high)
+
+# unique(student$Walc)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=Walc, fill=Walc))
+
+# ggsave("display.28.Walc.png")
+# i believe that we can keep these as numerical :
+student$Walc = as.integer(student$Walc)
+
+################################################################################################
+################################################################################################
+# 29 health - current health status (numeric: from 1 - very bad to 5 - very good)
+
+# unique(student$health)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=health, fill=health))
+
+# ggsave("display.29.health.png")
+# i believe that we can keep these as numerical :
+student$health = as.integer(student$health)
+
+################################################################################################
+################################################################################################
+# 30 absences - number of school absences (numeric: from 0 to 93)
+
+# unique(student$absences)
+
+# ggplot(data = student) + 
+#       geom_bar(mapping = aes(x=absences, fill=absences))
+
+# ggplot(data=student, aes(x=absences)) + 
+#      geom_histogram(aes(y=..density..), colour="black", fill="white")+
+#      geom_density(alpha=.2, fill="#FF6666")
+
+# ggsave("display.30.absences.png")
+# i believe that we can keep these as numerical :
+student$absences = as.integer(student$absences)
+
+################################################################################################
+################################################################################################
+# $ G1        : int  5 5 7 15 6 15 12 6 16 14 ...
+
+# unique(student$G1)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=G1, fill=G1))
+
+# ggplot(data=student, aes(x=G1)) + 
+#       geom_histogram(aes(y=..density..), colour="black", fill="white")+
+#       geom_density(alpha=.2, fill="#FF6666")
+
+# ggsave("display.0.G1.png")
+# i believe that we can keep these as numerical, although we may not need it :
+student$G1 = as.factor(student$G1)
+
+################################################################################################
+################################################################################################
+# $ G2        : int  6 5 8 14 10 15 12 5 18 15 ...
+
+# unique(student$G2)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=G2, fill=G2))
+
+# ggplot(data=student, aes(x=G2)) + 
+#       geom_histogram(aes(y=..density..), colour="black", fill="white")+
+#       geom_density(alpha=.2, fill="#FF6666")
+
+# ggsave("display.0.G2.png")
+# i believe that we can keep these as numerical, although we may not need it :
+student$G2 = as.factor(student$G2)
+
+################################################################################################
+################################################################################################
+# $ G3        : int  6 6 10 15 10 15 11 6 19 15 ...
+
+# unique(student$G3)
+
+# ggplot(data = student) + 
+#        geom_bar(mapping = aes(x=G3, fill=G3))
+
+# ggplot(data=student, aes(x=G3)) + 
+#       geom_histogram(aes(y=..density..), colour="black", fill="white")+
+#       geom_density(alpha=.2, fill="#FF6666")
+
+# ggsave("display.0.G3.png")
+# i believe that we can covert it into RANGES of VALUES :
+student$G3 = as.factor(student$G3)
+
+################################################################################################
+summary(student)
+str(student)
+class(student)
+################################################################################################
+# knitr::kable(summary(student, format = "html"))
+################################################################################################
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **3. DATA SELECTION**
+<p>&nbsp;</p>
+\newpage
+
+```{r }
+## the OUTPUT VARIABLES is G3
+## we may remove G1 and G2
+## and some other features
+
+student1 <- subset(student, select = -c(G1, G2))
+
+student2 <- subset(student1, 
+                   select = -c(school, sex, address, famsize, Pstatus, 
+                   Mjob, Fjob, reason, guardian, schoolsup, famsup, 
+                   paid, activities, nursery, 
+                   higher, internet, romantic))
+
+### shall we decide to keep ALL the FEATURES (ATTRIBUTES)
+student2 = student1
+
+str(student2)
+
+student2$G3 = as.factor(student2$G3)
+
+table(student2$G3)
+
+### for simplicity, to work with a copy of STUDENT2, let's call it STUDENT3
+
+student3 = subset(student2, 
+                  select= c(age, traveltime, studytime, failures, absences, G3))
+
+### shall we decide to keep ALL the FEATURES (ATTRIBUTES)
+### student3 = student2
+
+table(student3$G3)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **4. DATA FILTERING**
+<p>&nbsp;</p>
+\newpage
+
+```{r } 
+## in order to KEEP the RECORDS where the GRADE 3 is > 2 :
+
+dim(student3)
+
+student3$G3 = as.integer(student3$G3)
+
+student4 = student3[student3$G3 > 2, ]
+
+dim(student4) 
+
+ggplot(data = student4) + 
+       geom_bar(mapping = aes(x=G3, fill=G3))
+
+ggsave("display.0.G3.after.filtering.grade3.frequency.png")
+
+student3 = student4
+
+## TRANSFORMING G3 into RANGES of PASS and NO-PASS :
+
+student3$G3 = as.integer(student3$G3)
+
+student3$RESULT[student3$G3 <= 10] = "NO_PASS"
+student3$RESULT[student3$G3 >=10 ] = "PASS"
+
+student3 <- subset(student3, select = -c(G3))
+
+student3$RESULT = as.factor(student3$RESULT)
+
+## DISPLAYING THE FEATURES (ATTRIBUTES) in THE CURRENT DATASET :
+
+colnames(student3)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **5. TRAINING AND TEST SETS**
+<p>&nbsp;</p>
+\newpage
+
+```{r } 
+### CHOOSING the **TRAINING** and the **TESTING** SETS
+
+set.seed(123)
+
+indxTrain <- createDataPartition(student3$RESULT, 
+                                 p = 0.70, 
+                                 list = FALSE)
+
+training <- student3[indxTrain,]
+# training
+
+testing <- student3[-indxTrain,]
+# testing
+
+dim(student3)
+dim(training)
+dim(testing)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **6. TRAINING AND PREDICTIONS WITH ANN (CARET)**
+<p>&nbsp;</p>
+\newpage
+
+<p>&nbsp;</p>
+#### **6.1. TRAINING**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+
+TrainingParameters <- trainControl(method = "repeatedcv", number = 10, repeats=10)
+
+# nnnet package by defualt uses the Logistic Activation function
+fit.nn <- train( RESULT~ ., 
+                   data = training, 
+                   method = "nnet", 
+                   trControl = TrainingParameters, 
+                   preProcess = c("center","scale"), 
+                   trace=FALSE,
+                   verbose=FALSE, 
+                   # tuneLength = 20, 
+                   na.action = na.omit)
+
+## The OUTPUT of nnet
+
+# Size: Number of Hidden Layers.
+# Decay: Is the regularization factor that offsets overfitting.
+# Kappa: Evaluates the match is significant or by chance.
+
+head(fit.nn$results)
+tail(fit.nn$results)
+
+print(fit.nn)
+# plot(fit.nn)
+```
+
+<p>&nbsp;</p>
+#### **6.2. PREDICTIONS**
+<p>&nbsp;</p>
+
+```{r } 
+## colnames(testing)
+## [1] "age"        "traveltime" "studytime"  "failures"   "absences"  
+## [6] "RESULT"
+## nn_predict <- predict(nn_model, testing[-6])
+
+fit.nn.predict <- predict(fit.nn, newdata = testing)
+```
+
+We would aim to optimize the model by FEATURE SELECTION or by including NEW FEATURES 
+from the data that is available (we have excluded at the beginning many features). 
+
+<p>&nbsp;</p>
+#### **6.3. THE CONFUSION MATRIX**
+<p>&nbsp;</p>
+
+```{r } 
+confusionMatrix(fit.nn.predict, testing$RESULT)
+```
+
+**The ACCURACY of the MODEL is :** 
+
+```{r } 
+mean(fit.nn.predict == testing$RESULT)
+
+# dim(student3)
+# accuracy <- sum(nn_predict == (testing$RESULT))/length(testing$RESULT)
+# print(accuracy)
+```
+
+<p>&nbsp;</p>
+#### **6.4. THE VARIABLE IMPORTANCE**
+<p>&nbsp;</p>
+
+```{r } 
+X <- varImp(fit.nn)
+print(X)
+plot(X)
+
+plotnet(fit.nn)
+title("Graphical Representation of Neural Network")
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **7. TRAINING AND PREDICTIONS WITH ANN**
+<p>&nbsp;</p>
+\newpage
+
+We are using the package "neuralnet" available on CRAN : 
+
+https://cran.r-project.org/web/packages/neuralnet/index.html
+
+and according to the description in the book : 
+
+"Machine Leraning with R"
+
+<p>&nbsp;</p>
+#### **7.1. TRAINING**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+
+model.nn1 <- neuralnet(RESULT ~ age + traveltime + studytime + failures + absences,
+                       data = training, 
+                       hidden=2, 
+                       act.fct = "logistic", 
+                       linear.output = FALSE)
+
+plot(model.nn1)
+
+model.nn2 <- neuralnet(RESULT ~ age + traveltime + studytime + failures + absences,
+                       data = training, 
+                       hidden=2, 
+                       act.fct = "tanh", 
+                       linear.output = FALSE)
+
+plot(model.nn2)
+```
+
+<p>&nbsp;</p>
+#### **7.2. PREDICTIONS**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+
+model.nn1.results <- neuralnet::compute(model.nn1, testing)
+head(model.nn1.results$net.result)
+
+model.nn2.results <- neuralnet::compute(model.nn2, testing)
+head(model.nn2.results$net.result)
+```
+
+
+We have followed also the materials from online resources : 
+
+https://datascienceplus.com/neuralnet-train-and-test-neural-networks-using-r/
+
+although using CARET package is simpler and easier, and permits also an easy 
+calculation of the CONFUSION MATRIX and the VARIABLE IMPORTANCE.
+
+\newpage
+<p>&nbsp;</p>
+#### **8. TRAINING AND PREDICTIONS WITH SVM (CARET)**
+<p>&nbsp;</p>
+\newpage
+
+\newpage
+<p>&nbsp;</p>
+#### **8.A. using SVM_LINEAR**
+<p>&nbsp;</p>
+\newpage
+
+<p>&nbsp;</p>
+#### **8.1. TRAINING**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+
+TrainingParameters <- trainControl(method = "repeatedcv", number = 10, repeats=10)
+# grid <- expand.grid(C = c(0,0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,5))
+                    
+svm_Linear <- train( RESULT~ ., 
+                     data = training, 
+                     method = "svmLinear", 
+                     trControl = TrainingParameters, 
+                     preProcess = c("center","scale"), 
+                     trace=FALSE,
+                     verbose=FALSE, 
+                     # tuneGrid = grid,
+                     # tuneLength = 20, 
+                     na.action = na.omit)
+
+## The OUTPUT of svm_Linear
+
+head(svm_Linear$results)
+tail(svm_Linear$results)
+
+print(svm_Linear)
+# plot(svm_Linear)
+```
+
+<p>&nbsp;</p>
+#### **8.2. PREDICTIONS**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+svm_Linear_predict <- predict(svm_Linear, newdata = testing)
+```
+
+<p>&nbsp;</p>
+#### **8.3. THE CONFUSION MATRIX**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+confusionMatrix(svm_Linear_predict, testing$RESULT)
+```
+
+**The ACCURACY of the MODEL is :** 
+
+```{r } 
+mean(svm_Linear_predict == testing$RESULT)
+```
+
+<p>&nbsp;</p>
+#### **8.4. THE VARIABLE IMPORTANCE**
+<p>&nbsp;</p>
+
+```{r } 
+X <- varImp(svm_Linear)
+print(X)
+plot(X)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **8.B. using SVM_RADIAL**
+<p>&nbsp;</p>
+\newpage
+
+<p>&nbsp;</p>
+#### **8.5. TRAINING**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+
+TrainingParameters <- trainControl(method = "repeatedcv", number = 10, repeats=10)
+# grid <- expand.grid(C = c(0,0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 5))
+
+svm_Radial <- train( RESULT~ ., 
+                   data = training, 
+                   method = "svmRadial", 
+                   trControl = TrainingParameters, 
+                   preProcess = c("center","scale"), 
+                   trace=FALSE,
+                   verbose=FALSE, 
+                   # tuneGrid = grid,
+                   # tuneLength = 20, 
+                   na.action = na.omit)
+
+## The OUTPUT of svm_Radial
+
+head(svm_Radial$results)
+tail(svm_Radial$results)
+
+print(svm_Radial)
+plot(svm_Radial)
+```
+
+<p>&nbsp;</p>
+#### **8.6. PREDICTIONS**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+svm_Radial_predict <- predict(svm_Radial, newdata = testing)
+```
+
+<p>&nbsp;</p>
+#### **8.7. THE CONFUSION MATRIX**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+confusionMatrix(svm_Radial_predict, testing$RESULT)
+```
+
+**The ACCURACY of the MODEL is :** 
+
+```{r } 
+mean(svm_Radial_predict == testing$RESULT)
+```
+
+<p>&nbsp;</p>
+#### **8.8. THE VARIABLE IMPORTANCE**
+<p>&nbsp;</p>
+
+```{r } 
+X <- varImp(svm_Radial)
+print(X)
+plot(X)
+```
+
+\newpage
+<p>&nbsp;</p>
+#### **9. TRAINING AND PREDICTIONS WITH SVM**
+<p>&nbsp;</p>
+\newpage
+
+
+As it is described in the book of the class "Machine Learning with R", we may also use the package "kernlab" where ksvm() function uses the Gaussian RBF kernel (by default), 
+
+or it may use the following other kernels:
+
+• ‘rbfdot’ Radial Basis kernel "Gaussian"
+
+• ‘polydot’ Polynomial kernel
+
+• ‘vanilladot’ Linear kernel
+
+• ‘tanhdot’ Hyperbolic tangent kernel
+
+• ‘laplacedot’ Laplacian kernel
+
+• ‘besseldot’ Bessel kernel
+
+• ‘anovadot’ ANOVA RBF kernel
+
+• ‘splinedot’ Spline kernel
+
+• ‘stringdot’ String kernel
+
+We have chosen to work below with **rbfdot** and **tanhdot**. 
+
+<p>&nbsp;</p>
+#### **9.1. TRAINING**
+<p>&nbsp;</p>
+
+```{r } 
+suppressPackageStartupMessages(library(klaR))
+suppressPackageStartupMessages(library(kernlab))
+
+set.seed(123)
+
+model.ksvm1 <- ksvm(RESULT ~ age + traveltime + studytime + failures + absences, 
+                    data = training, 
+                    kernel="rbfdot")
+
+model.ksvm1
+
+model.ksvm2 <- ksvm(RESULT ~ age + traveltime + studytime + failures + absences, 
+                    data = training, 
+                    kernel="tanhdot")
+
+model.ksvm2
+
+```
+
+<p>&nbsp;</p>
+#### **9.2. PREDICTIONS**
+<p>&nbsp;</p>
+
+```{r } 
+set.seed(123)
+
+model.ksvm1.results <- predict(model.ksvm1, testing, type="response")
+head(model.ksvm1.results)
+
+table(model.ksvm1.results, testing$RESULT)
+agreement1 <-  model.ksvm1.results == testing$RESULT
+table(agreement1)
+prop.table(table(agreement1))
+
+model.ksvm2.results <- predict(model.ksvm2, testing, type="response")
+head(model.ksvm2.results)
+
+table(model.ksvm2.results, testing$RESULT)
+agreement2 <-  model.ksvm2.results == testing$RESULT
+table(agreement2)
+prop.table(table(agreement2))
+```
+
+We have followed above the materials from the book recommended in the class : 
+
+https://www.amazon.com/Machine-Learning-R-Brett-Lantz-ebook/dp/B00G9581JM
+
+although using CARET package is simpler and easier, and permits also a direct
+calculation of the CONFUSION MATRIX and VARIABLE IMPORTANCE.
+
+\newpage
+<p>&nbsp;</p>
+#### **10. CONCLUSIONS**
+<p>&nbsp;</p>
+\newpage
+
+Here below we are comparing the algorithms that we have used above, 
+
+particularly ANN, 
+
+and SVM with a Linear Kernel, 
+
+and SVM with a Radial Basis Function (RBF) Kernel.
+
+```{r } 
+set.seed(123)
+
+algo_results <- resamples(list(NNET=fit.nn, 
+                               SVML=svm_Linear, 
+                               SVMR=svm_Radial))
+
+summary(algo_results)
+
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+
+bwplot(algo_results, scales=scales)
+
+splom(algo_results)
+
+diffs <- diff(algo_results)
+
+# summarize p-values for pair-wise comparisons
+
+summary(diffs)
+```
+
+\newpage 
+
+As we can see, by comparing the **ACCURACY** on Box-and-Whisker plots, the ML model that is
+based on SVM-RBF performs better than the ML models that are based on ANN and SVM-LK, 
+although the precise **ACCURACY** that we have obtained with SVM-RBF is only 0.58.
+
+
+In fact, considering the precise values of the **ACCURACY**, we could rank **ANN** (0.62),
+followed by **SVM-LK** (0.61), and **SVM-RBF** (0.58).    
+
+
+Also the **FEATURES** that are considered as important differ between these models :
+
+
+in **ANN** model, the order of feature importance is : 
+
+"studytime", failures", "absences", "age" ;
+
+
+in sharp contrast with the model based on **SVM (LK or RBF)**, that place more emphasis on :
+
+"absences", "age", "failures", and "traveltime" (SVM-LK and SVM-RBF). 
+
+\newpage

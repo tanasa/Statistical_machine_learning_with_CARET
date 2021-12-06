@@ -1,0 +1,316 @@
+---
+title: "NAIVE BAYES to predict SPAM versus HAM"
+author: "Bogdan Tanasa"
+date: ""
+output:
+  pdf_document: 
+   latex_engine: xelatex
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<p>&nbsp;</p>
+### **THE SECTIONS IN THE RMARKDOWN DOCUMENT :**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **1. INTRODUCTION**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **2. READING THE DATA**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **3. DATA RANDOMIZATION**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **4. DATA TRANSFORMATION**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **5. TRAINING AND TEST SETS**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **6. TO VISUALIZE THE WORD CLOUDS**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **7. DATA FILTERING**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **8. PERFORMING THE CONVERSIONS**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **9. TRAINING AND MAKING THE PREDICTIONS**
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+#### **10. TRAINING AND MAKING THE PREDICTIONS AFTER ADDING LAGRANGE ESTIMATOR**
+<p>&nbsp;</p>
+
+
+<p>&nbsp;</p>
+#### **1. INTRODUCTION**
+<p>&nbsp;</p>
+
+We are using the data from **UCI** : !( https://archive.ics.uci.edu/ml/datasets/YouTube+Spam+Collection )
+
+We are reading a file about **SHAKIRA**, and we aim to predict whether these messages are **SPAM/HAM** by using **a NAIVE BAYES algorithm**;
+
+<p>&nbsp;</p>
+#### **2. READING THE DATA**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+
+library(klaR)
+library(MASS)
+library(caret)
+
+library(tm)
+library(wordcloud)
+library(e1071)
+library(gmodels)
+library(pander)
+
+library(dplyr)
+library(doMC)
+registerDoMC(cores=4)
+```
+
+```{r warnings=FALSE, message=FALSE}
+#######################################################################
+
+sms_raw <- read.delim("Youtube05-Shakira_03oct2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+head(sms_raw)
+
+# to make the columns TYPE and TEXT, as it is easier to work with the RELEVANT DATA
+
+sms_raw2 = subset(sms_raw, select=c("CONTENT", "CLASS"))
+sms_raw2$type = ifelse(sms_raw2$CLASS > 0, "spam", "ham")
+sms_raw2$text = sms_raw2$CONTENT
+
+sms_raw3 = subset(sms_raw2, select=c("type", "text"))
+sms_raw3$type <- factor(sms_raw3$type)
+head(sms_raw3)
+# write.table(sms_raw3, file="file.sms_raw3.for.verifications.txt", sep="\t", quote=F)
+
+# for simplicity, to use again as a variable the name SMS_RAW
+rm(sms_raw)
+
+sms_raw = sms_raw3
+head(sms_raw)
+dim(sms_raw)
+```
+
+<p>&nbsp;</p>
+#### **3. DATA RANDOMIZATION**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+#######################################################################
+# here we  randomize the lines of input file:
+
+set.seed(12358)
+sms_raw <- sms_raw[sample(nrow(sms_raw)),]
+str(sms_raw)
+dim(sms_raw)
+```
+
+<p>&nbsp;</p>
+#### **4. DATA TRANSFORMATION**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+#######################################################################
+# we transform the text into a corpus that can later be used in the analysis, 
+# then we will convert all text to lowercase, 
+# remove numbers, remove some common stop words in english, 
+# remove punctuation and extra whitespace, and finally, 
+# we generate the document term that will be the basis for the classification task.
+
+sms_corpus <- Corpus(VectorSource(sms_raw$text))
+
+sms_corpus_clean <- sms_corpus %>%
+    tm_map(content_transformer(tolower)) %>% 
+    tm_map(removeNumbers) %>%
+    tm_map(removeWords, stopwords(kind="en")) %>%
+    tm_map(removePunctuation) %>%
+    tm_map(stripWhitespace) %>% tm_map(stemDocument)  
+
+sms_dtm <- DocumentTermMatrix(sms_corpus_clean)
+```
+
+<p>&nbsp;</p>
+#### **5. TRAINING AND TEST SETS**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+#######################################################################################
+
+dim(sms_dtm)[1]
+length(sms_corpus_clean)
+
+LENGTH_TRAIN = dim(sms_dtm)[1]  * 0.7
+LENGTH_DATA = dim(sms_dtm)[1] 
+
+sms_dtm_train <- sms_dtm[1:LENGTH_TRAIN, ]
+sms_dtm_test <- sms_dtm[(LENGTH_TRAIN+1):LENGTH_DATA, ]
+
+sms_train_labels <- sms_raw[1:LENGTH_TRAIN, ]$type
+sms_test_labels <- sms_raw[(LENGTH_TRAIN+1):LENGTH_DATA, ]$type
+
+sms_train_labels <- sms_raw[1:LENGTH_TRAIN, ]$type
+sms_test_labels <- sms_raw[(LENGTH_TRAIN+1):LENGTH_DATA, ]$type
+
+head(sms_train_labels)
+head(sms_test_labels)
+
+length(sms_train_labels )
+length(sms_test_labels )
+
+# in order to BALANCE the DATA 
+# to compare the proportion of SPAM and HAM in the training and test data frames:
+
+prop.table(table(sms_train_labels))
+prop.table(table(sms_test_labels))
+```
+
+<p>&nbsp;</p>
+#### **6. TO VISUALIZE the WORD CLOUDS**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+#############################################################
+# to represent the data as WORDCLOUDS :
+# library(wordcloud)
+
+# png("word.cloud.all.png")
+wordcloud(sms_corpus_clean, min.freq = 5, random.order = FALSE) ### changing MIN FREQ
+# dev.off()
+
+spam <- subset(sms_raw, type == "spam")
+ham <- subset(sms_raw, type == "ham")
+
+dim(spam) 
+dim(ham)  
+
+#############################################################
+# to represent the SPAM data as WORDCLOUDS :
+# png("word.cloud.spam.png")
+wordcloud(spam$text, max.words = 40, scale = c(3, 0.5))
+# dev.off()
+
+#############################################################
+# to represent the HAM data as WORDCLOUDS :
+# png("word.cloud.ham.png")
+wordcloud(ham$text, max.words = 40, scale = c(3, 0.5))
+# dev.off()
+
+```
+
+<p>&nbsp;</p>
+#### **7. DATA FILTERING**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+# to find the FREQUENT WORDS with frequency > 2 :
+# findFreqTerms(sms_dtm_train, 2)
+
+sms_freq_words <- findFreqTerms(sms_dtm_train, 2)  ### we can change to 5
+
+# as we desire all the rows, but only the columns representing the words
+# in the sms_freq_words vector, we use the commands :
+
+sms_dtm_freq_train <- sms_dtm_train[ , sms_freq_words]
+sms_dtm_freq_test  <- sms_dtm_test[ , sms_freq_words]
+```
+
+<p>&nbsp;</p>
+#### **8. PERFORMING THE CONVERSIONS**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+# to define a new FUNCTION : to convert the counts into Yes, No : 
+
+convert_counts <- function(x) { x <- ifelse(x > 0, "Yes", "No") }
+
+sms_train <- apply(sms_dtm_freq_train, MARGIN = 2, convert_counts)
+sms_test <- apply(sms_dtm_freq_test, MARGIN = 2, convert_counts)
+```
+
+<p>&nbsp;</p>
+#### **9. TRAINING AND MAKING THE PREDICTIONS**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+# library(e1071)
+
+sms_classifier <- naiveBayes(sms_train, sms_train_labels)
+
+sms_test_pred <- predict(sms_classifier, sms_test)
+
+# showing the CROSS TABLE :
+# library(gmodels)
+
+CrossTable(sms_test_pred, sms_test_labels,
+           prop.chisq = FALSE, prop.t = FALSE,
+           dnn = c("predicted", "actual"))
+```
+
+Here the **ACCURACY** is (51 +42)/(51+42+16+1) = **0.8454545**
+
+
+<p>&nbsp;</p>
+#### **10. TRAINING AND MAKING THE PREDICTIONS AFTER ADDING LAGRANGE ESTIMATOR**
+<p>&nbsp;</p>
+
+```{r warnings=FALSE, message=FALSE}
+#############################################################
+
+sms_classifier2 <- naiveBayes(sms_train, sms_train_labels, laplace = 1)
+
+sms_test_pred2 <- predict(sms_classifier2, sms_test)
+
+CrossTable(sms_test_pred2, sms_test_labels,
+           prop.chisq = FALSE, prop.t = FALSE, prop.r = FALSE,
+           dnn = c("predicted", "actual"))
+```
+
+Here the **ACCURACY** is (51 +36)/(51+42+22+1) = **0.75**
+
+**ADDITIONAL and OTHER COMMENTS**
+
+```{r warnings=FALSE, message=FALSE}
+#############################################################
+### i have been trying also to use CARET on the dataset, 
+### although repetitively, I am getting the error below :
+
+### when performing the training :
+# Something is wrong; all the Accuracy metric values are missing:
+#    Accuracy       Kappa    
+# Min.   : NA   Min.   : NA  
+# 1st Qu.: NA   1st Qu.: NA  
+# Median : NA   Median : NA  
+# Mean   :NaN   Mean   :NaN  
+# 3rd Qu.: NA   3rd Qu.: NA  
+# Max.   : NA   Max.   : NA  
+# NA's   :2     NA's   :2    
+# Error: Stopping
+################################################################
+```
+
+<p>&nbsp;</p>
+
+**As a conclusion, by using a Naive Bayes approach to predict HAM versus SPAM in Shakira's messages, we have obtained a good ACCURACY of 0.84 (although adding the Lagrange estimator decreases the ACCURACY to 0.75).**
+
+<p>&nbsp;</p>
